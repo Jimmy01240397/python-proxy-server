@@ -21,6 +21,8 @@ with open('forwardlist.conf', 'r') as f:
     f.close()
 
 def start():    #Main Program
+    global locallist
+    global forwardlist
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(('', listening_port))
@@ -133,8 +135,6 @@ def do_forward(sock, weburl, httpver):
     sock.recv(buffer_size)
 
 def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
-    global locallist
-    global forwardlist
     weburl = str(remoteaddr[0]) + ':' + str(remoteaddr[1]) + '\n'
     try:
         remote.settimeout(1)
