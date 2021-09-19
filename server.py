@@ -14,9 +14,11 @@ buffer_size = 8192
 
 with open('locallist.conf', 'r') as f:
     locallist = f.readlines()
+    f.close()
 
 with open('forwardlist.conf', 'r') as f:
     forwardlist = f.readlines()
+    f.close()
 
 def start():    #Main Program
     try:
@@ -39,9 +41,11 @@ def start():    #Main Program
                 with open('locallist.conf', 'w') as f:
                     locallist = list(set(locallist))
                     f.writelines(locallist)
+                    f.close()
                 with open('forwardlist.conf', 'w') as f:
                     forwardlist = list(set(forwardlist))
                     f.writelines(forwardlist)
+                    f.close()
                 lasttime = time.time()
 
         except KeyboardInterrupt:
