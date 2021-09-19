@@ -39,7 +39,7 @@ def start():    #Main Program
         try:
             conn, addr = sock.accept() #Accept connection from client browser
             start_new_thread(conn_string, (conn, addr)) #Starting a thread
-            if time.time() - lasttime > 10:
+            if time.time() - lasttime > 30:
                 with open('locallist.conf', 'w') as f:
                     locallist = list(set(locallist))
                     f.writelines(locallist)
@@ -150,7 +150,7 @@ def do_forward(sock, weburl, httpver):
 def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
     weburl = str(remoteaddr[0]) + ':' + str(remoteaddr[1]) + '\n'
     try:
-        remote.settimeout(1)
+        remote.settimeout(10)
         reply = remote.recv(buffer_size)
         if(len(reply)>0):
             conn.send(reply)
