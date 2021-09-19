@@ -99,8 +99,12 @@ def conn_string(conn, addr):
                 remote.connect(forwardaddr)
                 do_forward(remote, weburl, httpver)
                 forwardlist.append(weburl)
-                with open('forwardlist.conf', 'w') as f:
-                    f.writelines(forwardlist)
+                try:
+                    with open('forwardlist.conf', 'w') as f:
+                        f.writelines(forwardlist)
+                except Exception as e:
+                    pass
+
         #print(remote.error)
         
         remote.send(data)
@@ -147,13 +151,16 @@ def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
         #print(remote.error)
         sys.exit(1)
 
-    with open('locallist.conf', 'w') as f:
-        locallist = list(set(locallist))
-        f.writelines(locallist)
+    try:
+        with open('locallist.conf', 'w') as f:
+            locallist = list(set(locallist))
+            f.writelines(locallist)
 
-    with open('forwardlist.conf', 'w') as f:
-        forwardlist = list(set(forwardlist))
-        f.writelines(forwardlist)
+        with open('forwardlist.conf', 'w') as f:
+            forwardlist = list(set(forwardlist))
+            f.writelines(forwardlist)
+    except Exception as e:
+        pass
 
 def proxy_server(conn, remote, addr, remoteaddr):
     try:
