@@ -1,4 +1,4 @@
-import socket, sys, os
+import socket, sys, os, time
 from _thread import *
 
 try:
@@ -30,10 +30,20 @@ def start():    #Main Program
         print(e)
         sys.exit(2)
 
+    lasttime = time.time()
     while True:
         try:
             conn, addr = sock.accept() #Accept connection from client browser
             start_new_thread(conn_string, (conn, addr)) #Starting a thread
+            if time.time() - lasttime > 60:
+                with open('locallist.conf', 'w') as f:
+                    locallist = list(set(locallist))
+                    f.writelines(locallist)
+                with open('forwardlist.conf', 'w') as f:
+                    forwardlist = list(set(forwardlist))
+                    f.writelines(forwardlist)
+                lasttime = time.time()
+
         except KeyboardInterrupt:
             sock.close()
             print("\n[*] Graceful Shutdown")
@@ -99,11 +109,6 @@ def conn_string(conn, addr):
                 remote.connect(forwardaddr)
                 do_forward(remote, weburl, httpver)
                 forwardlist.append(weburl)
-                try:
-                    with open('forwardlist.conf', 'w') as f:
-                        f.writelines(forwardlist)
-                except Exception as e:
-                    pass
 
         #print(remote.error)
         
@@ -150,17 +155,6 @@ def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
         conn.close()
         #print(remote.error)
         sys.exit(1)
-
-    try:
-        with open('locallist.conf', 'w') as f:
-            locallist = list(set(locallist))
-            f.writelines(locallist)
-
-        with open('forwardlist.conf', 'w') as f:
-            forwardlist = list(set(forwardlist))
-            f.writelines(forwardlist)
-    except Exception as e:
-        pass
 
 def proxy_server(conn, remote, addr, remoteaddr):
     try:
