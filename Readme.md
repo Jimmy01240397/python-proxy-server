@@ -12,6 +12,10 @@ Proxies were invented to add structure and encapsulation to distributed
 systems. Today, most proxies are web proxies, facilitating access to
 content on the World Wide Web and providing anonymity.
 
+### Add by Chummy
+1. now allow https proxy
+2. It can auto forward http packet, which was be ban in your internal to another proxy server.
+
 ### illustration
 <p align ="left">
 <img src= "assets/proxy-illustration.jpg" alt="Basic proxy understanding">
