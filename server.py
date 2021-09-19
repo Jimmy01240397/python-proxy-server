@@ -39,7 +39,7 @@ def start():    #Main Program
         try:
             conn, addr = sock.accept() #Accept connection from client browser
             start_new_thread(conn_string, (conn, addr)) #Starting a thread
-            if time.time() - lasttime > 60:
+            if time.time() - lasttime > 10:
                 with open('locallist.conf', 'w') as f:
                     locallist = list(set(locallist))
                     f.writelines(locallist)
@@ -51,10 +51,13 @@ def start():    #Main Program
                 lasttime = time.time()
 
         except KeyboardInterrupt:
-            sock.close()
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+                sock.close()
+            except Exception:
+                pass
             print("\n[*] Graceful Shutdown")
             sys.exit(1)
-    s.close()
 
 def conn_string(conn, addr):
     try:    
@@ -125,8 +128,18 @@ def conn_string(conn, addr):
 
         start_new_thread(proxy_server, (conn, remote, addr, (webserver, port))) #Starting a thread
         start_new_thread(proxy_server, (remote, conn, (webserver, port), addr)) #Starting a thread
+    except KeyboardInterrupt:
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
     except Exception as e:
-        conn.close()
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
         print('connect error:')
         print(e)
 
@@ -149,16 +162,37 @@ def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
             locallist.append(weburl)
         
     except socket.timeout:
-        remote.close()
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
         remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote.connect(forwardaddr)
         do_forward(remote, weburl, httpver)
         forwardlist.append(weburl)
-    except socket.error:
-        remote.close()
-        conn.close()
-        #print(remote.error)
-        sys.exit(1)
+    except KeyboardInterrupt:
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
 
 def proxy_server(conn, remote, addr, remoteaddr):
     try:
@@ -177,15 +211,40 @@ def proxy_server(conn, remote, addr, remoteaddr):
             else:
                 break
 
-        remote.close()
-        conn.close()
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
 #        print("[*] Socket Close: %s => %s" % (str(remoteaddr[0]), str(addr[0])))
 
 
-    except socket.error:
-        remote.close()
-        conn.close()
-        #print(remote.error)
-        sys.exit(1)
+    except KeyboardInterrupt:
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
+    except Exception as e:
+        try:
+            remote.shutdown(socket.SHUT_RDWR)
+            remote.close()
+        except Exception:
+            pass
+        try:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+        except Exception:
+            pass
 
 start()
