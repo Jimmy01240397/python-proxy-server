@@ -1,14 +1,9 @@
 import socket, sys, os, time
 from _thread import *
+import threading
 
-try:
-    listening_port = 8888
-    forwardaddr = ('192.168.10.254', 8888)
-except KeyboardInterrupt:
-    print("\n[*] User has requested an interrupt")
-    print("[*] Application Exiting.....")
-    sys.exit()
-
+listening_port = 8888
+forwardaddr = ('192.168.10.254', 8888)
 max_connection = 100
 buffer_size = 8192
 
@@ -38,20 +33,30 @@ def start():    #Main Program
     while True:
         try:
             conn, addr = sock.accept() #Accept connection from client browser
+            thread_max.acquire()
             start_new_thread(conn_string, (conn, addr)) #Starting a thread
             if time.time() - lasttime > 30:
-                with open('locallist.conf', 'w') as f:
-                    locallist = list(set(locallist))
-                    f.writelines(locallist)
-                    f.close()
-                with open('forwardlist.conf', 'w') as f:
-                    forwardlist = list(set(forwardlist))
-                    f.writelines(forwardlist)
-                    f.close()
+                if os.path.isfile('reloadconf'):
+                    with open('locallist.conf', 'r') as f:
+                        locallist = f.readlines()
+                        f.close()
+                    with open('forwardlist.conf', 'r') as f:
+                        forwardlist = f.readlines()
+                        f.close()
+                    os.remove('reloadconf')
+                else:
+                    with open('locallist.conf', 'w') as f:
+                        locallist = list(set(locallist))
+                        f.writelines(locallist)
+                        f.close()
+                    with open('forwardlist.conf', 'w') as f:
+                        forwardlist = list(set(forwardlist))
+                        f.writelines(forwardlist)
+                        f.close()
                 lasttime = time.time()
 
         except KeyboardInterrupt:
-            closesocket((sock))
+            closesocket([sock])
             print("\n[*] Graceful Shutdown")
             sys.exit(1)
 
@@ -121,15 +126,20 @@ def conn_string(conn, addr):
         
         if weburl not in locallist and weburl not in forwardlist:
             proxy_ontest(conn, remote, addr, (webserver, port), httpver)
-
+        thread_max.acquire()
         start_new_thread(proxy_server, (conn, remote, addr, (webserver, port))) #Starting a thread
+        thread_max.acquire()
         start_new_thread(proxy_server, (remote, conn, (webserver, port), addr)) #Starting a thread
     except KeyboardInterrupt:
-        closesocket((conn))
+        closesocket([conn])
     except Exception as e:
-        closesocket((conn))
+        closesocket([conn])
         print('connect error:')
         print(e)
+    finally:
+        thread_max.release()
+        #print("end")
+        #pass
 
 def do_forward(sock, weburl, httpver):
     sock.send(('CONNECT ' + weburl.strip() + ' ' + httpver + '\r\n\r\n').encode())
@@ -142,49 +152,40 @@ def proxy_ontest(conn, remote, addr, remoteaddr, httpver):
         reply = remote.recv(buffer_size)
         if(len(reply)>0):
             conn.send(reply)
-            dar = float(len(reply))
-            dar = float(dar/1024)
-            dar = "%.3s" % (str(dar))
-            dar = "%s KB" % (dar)
-#            print("[*] Request Done: %s => %s : %s <=" % (str(remoteaddr[0]), str(addr[0]), str(dar)))
             locallist.append(weburl)
         
     except socket.timeout:
-        closesocket((remote))
+        closesocket([remote])
         remote = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         remote.connect(forwardaddr)
         do_forward(remote, weburl, httpver)
         forwardlist.append(weburl)
     except KeyboardInterrupt:
-        closesocket((remote, conn))
-    except Exception as e:
-        closesocket((remote, conn))
+        closesocket([remote, conn])
+    except Exception:
+        closesocket([remote, conn])
 
 def proxy_server(conn, remote, addr, remoteaddr):
     try:
+        remote.settimeout(10)
         while 1:
             reply = remote.recv(buffer_size)
 
             if(len(reply)>0):
                 conn.send(reply)
-                
-                dar = float(len(reply))
-                dar = float(dar/1024)
-                dar = "%.3s" % (str(dar))
-                dar = "%s KB" % (dar)
-#                print("[*] Request Done: %s => %s : %s <=" % (str(remoteaddr[0]), str(addr[0]), str(dar)))
-
             else:
                 break
 
-        closesocket((remote, conn))
-#        print("[*] Socket Close: %s => %s" % (str(remoteaddr[0]), str(addr[0])))
-
+        closesocket([remote, conn])
 
     except KeyboardInterrupt:
-        closesocket((remote, conn))
-    except Exception as e:
-        closesocket((remote, conn))
+        closesocket([remote, conn])
+    except Exception:
+        closesocket([remote, conn])
+    finally:
+        thread_max.release()
+        #print("end")
+        #pass
 
 def closesocket(conn):
     for sock in conn:
@@ -194,4 +195,7 @@ def closesocket(conn):
         except Exception:
             pass
 
-start()
+
+if __name__ == "__main__":
+    thread_max = threading.BoundedSemaphore(1000)
+    start()
