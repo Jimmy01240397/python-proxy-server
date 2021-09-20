@@ -13,6 +13,9 @@ systems. Today, most proxies are web proxies, facilitating access to
 content on the World Wide Web and providing anonymity.
 
 ### Add by Chummy
+<p align ="left">
+<img src= "assets/proxy-illustration2.jpg" alt="Add by Chummy">
+</p>
 1. now allow https proxy
 2. It can auto forward http packet, which was be ban in your internal to another proxy server.
 
